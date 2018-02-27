@@ -1,13 +1,23 @@
 package transceptor.technology;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  * @author tristan
  */
 public class Types {
 
-    public static final byte QP_HOOK = (byte)0x7c;
+    public Types() {    
+        RAW_MAP.put(QP_RAW8 & 0xff, QP_INT8);
+        RAW_MAP.put(QP_RAW16 & 0xff, QP_INT16);
+        RAW_MAP.put(QP_RAW32 & 0xff, QP_INT32);
+        RAW_MAP.put(QP_RAW64 & 0xff, QP_INT8);
+    }
     
+    public static final byte QP_HOOK = (byte) 0x7c;
+
     public static final byte QP_DOUBLE_N1 = (byte) 0x7d; // #125
     public static final byte QP_DOUBLE_0 = (byte) 0x7e;
     public static final byte QP_DOUBLE_1 = (byte) 0x7f;
@@ -48,4 +58,6 @@ public class Types {
     public static final byte QP_OPEN_MAP = (byte) 0xfd;
     public static final byte QP_CLOSE_ARRAY = (byte) 0xfe;
     public static final byte QP_CLOSE_MAP = (byte) 0xff;
+
+    public static final Map<Integer, Byte> RAW_MAP = new HashMap<>();
 }

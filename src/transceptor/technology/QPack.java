@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Level;
@@ -242,7 +243,8 @@ public class QPack {
      * @return
      */
     private Object _unpack(byte[] data, int pos, int end, String decode) {
-        int tp = convertByteToInt(new byte[] {data[0]});
+        int tp = (data[0] & 0xFF);
+        System.out.println("tp = " + tp);
         pos++;
         if (tp < 64) {
             return tp;
@@ -256,7 +258,16 @@ public class QPack {
         if (tp < 0x80) {
             return tp - 126;
         }
-        return tp;
+        if (tp < 0xe4) {
+            int end_pos = pos + (tp - 128);
+            return Arrays.copyOfRange(data, pos, end_pos);
+        }
+        if (tp < 0xe8) {
+            byte qp_type = RAW_MAP.get(tp);
+            int end_pos = pos + RAW_MAP.size() + convertByteToInt(data);
+        }
+        
+        throw new IllegalArgumentException("Error in qpack at position " + pos);
     }
 
     /**

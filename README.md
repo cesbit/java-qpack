@@ -1,2 +1,2 @@
 # java-qpack
-Java QPack library
+The Java QPack library is under development, you cannot use it.
