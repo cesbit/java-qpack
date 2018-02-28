@@ -3,6 +3,7 @@ package transceptor.technology;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -48,12 +49,32 @@ public class QPack {
      * @param b
      * @return
      */
-    public int convertByteToInt(byte[] b) {
-        int value = 0;
-        for (int i = 0; i < b.length; i++) {
-            value = (value << 8) | b[i];
+    public Number convertByteToInt(byte[] b) {
+        ByteBuffer wrapped = ByteBuffer.wrap(b);
+        wrapped.order(ByteOrder.LITTLE_ENDIAN);
+        switch (b.length) {
+            case 1:
+                return (int) wrapped.get(0);
+            case 2:
+                return (int) wrapped.getShort();
+            case 4:
+                return wrapped.getInt();
+            case 8:
+                return wrapped.getLong();
         }
-        return value;
+        return 0;
+    }
+
+    /**
+     * Converts byte[] to a double value
+     *
+     * @param b
+     * @return
+     */
+    public double convertByteToDouble(byte[] b) {
+        ByteBuffer wrapped = ByteBuffer.wrap(b);
+        wrapped.order(ByteOrder.LITTLE_ENDIAN);
+        return wrapped.getDouble();
     }
 
     /**
@@ -246,27 +267,47 @@ public class QPack {
         int tp = (data[0] & 0xFF);
         System.out.println("tp = " + tp);
         pos++;
+        // fixed integer
         if (tp < 64) {
             return tp;
         }
+        // fixed negative integer
         if (tp < 124) {
             return 63 - tp;
         }
+        // reserved for an object hook
         if (tp == QP_HOOK) {
             return 0;
         }
+        // fixed doubles
         if (tp < 0x80) {
-            return tp - 126;
+            return ((double) tp - 126);
         }
+        // fixed string length
         if (tp < 0xe4) {
             int end_pos = pos + (tp - 128);
-            return Arrays.copyOfRange(data, pos, end_pos);
+            return new String(Arrays.copyOfRange(data, pos, end_pos));
         }
+        // string
         if (tp < 0xe8) {
-            byte qp_type = RAW_MAP.get(tp);
-            int end_pos = pos + RAW_MAP.size() + convertByteToInt(data);
+            int qp_type = RAW_MAP.get(tp);
+            int end_pos = pos + qp_type + data.length;
+            pos += qp_type;
+            return new String(Arrays.copyOfRange(data, pos, data.length));
         }
-        
+        // integer (double included)
+        if (tp < 0xed) {
+            int qp_type = NUMBER_MAP.get(tp);
+            System.out.println("size  " + qp_type);
+            System.out.println("array " + Arrays.toString(data));
+            System.out.println("copy  " + Arrays.toString(Arrays.copyOfRange(data, pos, pos + qp_type)));
+            if (tp == (QP_DOUBLE & 0xff)) {
+                return convertByteToDouble(Arrays.copyOfRange(data, pos, pos + qp_type));
+            } else {
+                return convertByteToInt(Arrays.copyOfRange(data, pos, pos + qp_type));
+            }
+        }
+
         throw new IllegalArgumentException("Error in qpack at position " + pos);
     }
 
