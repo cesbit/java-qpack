@@ -7,8 +7,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,10 +24,12 @@ public class QPack {
 
     private final ByteArrayOutputStream bytesContainer;
     private final DataOutputStream container;
+    private int position;
 
     public QPack() {
         this.bytesContainer = new ByteArrayOutputStream();
         this.container = new DataOutputStream(bytesContainer);
+        this.position = 0;
     }
 
     /**
@@ -264,9 +268,8 @@ public class QPack {
      * @return
      */
     private Object _unpack(byte[] data, int pos, int end, String decode) {
-        int tp = (data[0] & 0xFF);
-        System.out.println("tp = " + tp);
-        pos++;
+        int tp = (data[position] & 0xff);
+        position = ++pos;
         // fixed integer
         if (tp < 64) {
             return tp;
@@ -285,30 +288,56 @@ public class QPack {
         }
         // fixed string length
         if (tp < 0xe4) {
-            int end_pos = pos + (tp - 128);
-            return new String(Arrays.copyOfRange(data, pos, end_pos));
+            int endPos = position + (tp - 128);
+            int p = position;
+            position = endPos;
+            return new String(Arrays.copyOfRange(data, p, endPos));
         }
         // string
         if (tp < 0xe8) {
-            int qp_type = RAW_MAP.get(tp);
-            int end_pos = pos + qp_type + data.length;
-            pos += qp_type;
-            return new String(Arrays.copyOfRange(data, pos, data.length));
+            int qpType = RAW_MAP.get(tp);
+            int endPos = position + qpType + data.length;
+            int p = position + qpType;
+            position = endPos;
+            return new String(Arrays.copyOfRange(data, p, data.length));
         }
         // integer (double included)
         if (tp < 0xed) {
-            int qp_type = NUMBER_MAP.get(tp);
-            System.out.println("size  " + qp_type);
-            System.out.println("array " + Arrays.toString(data));
-            System.out.println("copy  " + Arrays.toString(Arrays.copyOfRange(data, pos, pos + qp_type)));
+            int qpType = NUMBER_MAP.get(tp);
+            int p = position;
+            position += qpType;
             if (tp == (QP_DOUBLE & 0xff)) {
-                return convertByteToDouble(Arrays.copyOfRange(data, pos, pos + qp_type));
+                return convertByteToDouble(Arrays.copyOfRange(data, p, p + qpType));
             } else {
-                return convertByteToInt(Arrays.copyOfRange(data, pos, pos + qp_type));
+                return convertByteToInt(Arrays.copyOfRange(data, p, p + qpType));
             }
         }
+        // fixed array
+        if (tp < 0xf3) {
+            List list = new ArrayList();
+            for (int i = 0; i < (tp - 0xed); i++) {
+                System.out.println("begin: " + position + ", " + end);
+                Object value = _unpack(data, position, end, "utf-8");
+                list.add(value);
+            }
+            return list;
+        }
+        // boolean
+        if (tp < 0xfc) {
+            return SIMPLE_MAP.get(tp);
+        }
+        // open array
+        if (tp == (QP_OPEN_ARRAY & 0xff)) {
+            List list = new ArrayList();
+            while (position < end && data[position] != QP_CLOSE_ARRAY) {
+                Object value = _unpack(data, position, end, "utf-8");
+                list.add(value);
+            }
+            position++;
+            return list;
+        }
 
-        throw new IllegalArgumentException("Error in qpack at position " + pos);
+        throw new IllegalArgumentException("Error in qpack at position " + position);
     }
 
     /**
@@ -334,6 +363,7 @@ public class QPack {
      * @return
      */
     public Object unpack(byte[] data) {
+        position = 0;
         return _unpack(data, 0, data.length, "utf8");
     }
 

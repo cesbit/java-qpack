@@ -9,6 +9,7 @@ import java.util.Map;
  * @author tristan
  */
 public class Types {
+
     public static final byte QP_HOOK = (byte) 0x7c;
 
     public static final byte QP_DOUBLE_N1 = (byte) 0x7d; // #125
@@ -54,6 +55,8 @@ public class Types {
 
     public static final Map<Integer, Integer> RAW_MAP;
     public static final Map<Integer, Integer> NUMBER_MAP;
+    public static final Map<Integer, Boolean> SIMPLE_MAP;
+
     static {
         Map<Integer, Integer> map = new HashMap<>();
         map.put(QP_RAW8 & 0xff, 1);
@@ -61,7 +64,7 @@ public class Types {
         map.put(QP_RAW32 & 0xff, 4);
         map.put(QP_RAW64 & 0xff, 8);
         RAW_MAP = Collections.unmodifiableMap(map);
-        
+
         Map<Integer, Integer> map2 = new HashMap<>();
         map2.put(QP_INT8 & 0xff, 1);
         map2.put(QP_INT16 & 0xff, 2);
@@ -69,5 +72,11 @@ public class Types {
         map2.put(QP_INT64 & 0xff, 8);
         map2.put(QP_DOUBLE & 0xff, 8);
         NUMBER_MAP = Collections.unmodifiableMap(map2);
+
+        Map<Integer, Boolean> map3 = new HashMap<>();
+        map3.put(QP_BOOL_TRUE & 0xff, true);
+        map3.put(QP_BOOL_FALSE & 0xff, false);
+        map3.put(QP_BOOL_NULL & 0xff, null);
+        SIMPLE_MAP = Collections.unmodifiableMap(map3);
     }
 }
