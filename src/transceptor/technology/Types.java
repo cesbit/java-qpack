@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  *
- * @author tristan
+ * @author Tristan Nottelman
  */
 public class Types {
 

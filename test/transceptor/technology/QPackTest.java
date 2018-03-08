@@ -2,23 +2,26 @@ package transceptor.technology;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static transceptor.technology.Types.*;
 
 /**
  *
- * @author tristan
+ * @author Tristan Nottelman
  */
 public class QPackTest {
 
     private final Map<Object, Object> map = new HashMap<>();
+    private final String SEPERATOR = "================================================";
 
     public QPackTest() {
         map.put(true, new byte[]{QP_BOOL_TRUE});
@@ -49,52 +52,57 @@ public class QPackTest {
         map.put(56516123123132.122345, new byte[]{(byte) 236, 16, (byte) 222, (byte) 174, (byte) 184, 87, (byte) 179, (byte) 201, 66});
         map.put(-347685.89452, new byte[]{(byte) 236, 6, 13, (byte) 253, (byte) 147, (byte) 151, 56, 21, (byte) 193});
         map.put(-120, new byte[]{(byte) 232, (byte) 136});
-//        map.put(new byte[]{0x13, 0x00, 0x00, 0x00, 0x08, 0x00}, new byte[]{(byte) 134, 19, 0, 0, 0, 8, 0});
-        map.put(new Integer[]{2, 8}, new byte[]{(byte) 239, 2, 8});
+        map.put(new int[]{2, 8}, new byte[]{(byte) 239, 2, 8});
         map.put(new Integer[]{10, 20, 30, 40, 50, 60}, new byte[]{(byte) 252, 10, 20, 30, 40, 50, 60, (byte) 254});
         map.put(new Object[]{new Integer[]{5, 7}, 3}, new byte[]{(byte) 239, (byte) 239, 5, 7, 3});
-        map.put(new String[]{"Hello", "World", "!!"}, new byte[]{(byte)240, (byte)133, 72, 101, 108, 108, 111, (byte)133, 87, 111, 114, 108, 100, (byte)130, 33, 33});
-//
-//        ArrayList<Integer> list = new ArrayList<Integer>() {{
-//                add(4);
-//                add(5);
-//                add(6);
-//        }};
-//        ArrayList<Integer> list2 = new ArrayList<Integer>() {{
-//                add(4);
-//                add(5);
-//                add(6);
-//                add(7);
-//                add(8);
-//                add(9);
-//        }};
-//        Map<Integer, Integer> map2 = new HashMap<>();
-//        map2.put(2, 7);
-//        map2.put(5, 9);
-//        Queue q = new LinkedList();
-//        q.add(4);
-//        q.add(6);
-//        Stack s = new Stack();
-//        s.add(1);
-//        s.add(6);
-//        s.add(4);
-//        
-//        map.put(list, new byte[]{(byte)240, 4, 5, 6});
-//        map.put(list2, new byte[]{(byte)252, 4, 5, 6, 7, 8, 9, (byte)254});
-//        map.put(map2, new byte[]{(byte)245, 2, 7, 5, 9});
-//        map.put(q, new byte[]{(byte)239, 4, 6});
-//        map.put(s, new byte[]{(byte)240, 1, 6, 4});
+        map.put(new String[]{"Hello", "World", "!!"}, new byte[]{(byte) 240, (byte) 133, 72, 101, 108, 108, 111, (byte) 133, 87, 111, 114, 108, 100, (byte) 130, 33, 33});
+
+        ArrayList<Integer> list = new ArrayList<Integer>() {
+            {
+                add(4);
+                add(5);
+                add(6);
+            }
+        };
+        ArrayList<Integer> list2 = new ArrayList<Integer>() {
+            {
+                add(4);
+                add(5);
+                add(6);
+                add(7);
+                add(8);
+                add(9);
+            }
+        };
+        Map<Integer, Integer> map2 = new HashMap<>();
+        map2.put(2, 7);
+        map2.put(5, 9);
+        Queue q = new LinkedList();
+        q.add(4);
+        q.add(6);
+        Stack s = new Stack();
+        s.add(1);
+        s.add(6);
+        s.add(4);
+
+        map.put(list, new byte[]{(byte) 240, 4, 5, 6});
+        map.put(list2, new byte[]{(byte) 252, 4, 5, 6, 7, 8, 9, (byte) 254});
+        map.put(map2, new byte[]{(byte) 245, 2, 7, 5, 9});
+        map.put(q, new byte[]{(byte) 239, 4, 6});
+        map.put(s, new byte[]{(byte) 240, 1, 6, 4});
     }
 
     @Test
     public void testPack() {
         map.entrySet().forEach((entry) -> {
             QPack qpack = new QPack();
+
             byte[] result = qpack.pack(entry.getKey());
             System.out.println("Input:    " + entry.getKey());
             System.out.println("Expected: " + Arrays.toString((byte[]) entry.getValue()));
             System.out.println("Result:   " + Arrays.toString(result));
-            System.out.println("================================================");
+            System.out.println(SEPERATOR);
+
             assertArrayEquals((byte[]) entry.getValue(), result);
         });
     }
@@ -103,15 +111,46 @@ public class QPackTest {
     public void testUnpack() {
         map.entrySet().forEach((entry) -> {
             QPack qpack = new QPack();
-            Object result = qpack.unpack(qpack.pack(entry.getKey()));
-            System.out.println("Expected: " + entry.getKey() + "|");
+
+            Object key = entry.getKey();
+            Object result = qpack.unpack(qpack.pack(key), "utf-8");
+            System.out.println("Expected: " + key + "|");
             System.out.println("Result:   " + result + "|");
-            System.out.println("================================================");
-            if (entry.getKey() != null && entry.getKey().getClass().isArray()) {
-                assertEquals(Arrays.deepToString((Object[])entry.getKey()), Arrays.deepToString(((List)result).toArray()));
+            System.out.println(SEPERATOR);
+
+            if (key instanceof Collection<?>) {
+                //collection
+                assertArrayEquals(new ArrayList((Collection<?>) key).toArray(), (Object[]) result);
+            } else if (key != null && key.getClass().isArray()) {
+                //array
+                List<Object> l = new ArrayList<>();
+                l.addAll(Arrays.asList(key));
+                List<Object> l2 = new ArrayList<>();
+                l2.addAll(Arrays.asList(result));
+                assertArrayEquals(l.toArray(), l2.toArray());
             } else {
-                assertEquals(entry.getKey(), result);
+                // maps ?? and primitives + String
+                assertEquals(key, result);
             }
         });
+    }
+
+    @Test
+    public void testUnpackByteArray() {
+
+        Map<byte[], byte[]> m = new HashMap<>();
+        m.put(new byte[]{104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100}, new byte[]{(byte) 139, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100});
+        m.put(new byte[]{0x13, 0x00, 0x00, 0x00, 0x08, 0x00}, new byte[]{(byte) 134, 19, 0, 0, 0, 8, 0});
+        
+        QPack qpack = new QPack();
+
+        m.entrySet().forEach((entry) -> {
+            byte[] result = (byte[]) qpack.unpack(qpack.pack(entry.getKey()));
+            System.out.println("Input:  " + Arrays.toString(entry.getKey()));
+            System.out.println("Output: " + Arrays.toString(result));
+            System.out.println(SEPERATOR);
+            Assert.assertArrayEquals(entry.getKey(), result);
+        });
+
     }
 }

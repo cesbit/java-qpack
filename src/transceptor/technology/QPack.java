@@ -10,6 +10,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -18,7 +19,7 @@ import static transceptor.technology.Types.*;
 
 /**
  *
- * @author tristan
+ * @author Tristan Nottelman
  */
 public class QPack {
 
@@ -88,7 +89,7 @@ public class QPack {
      * @return array of bytes
      * @throws IOException
      */
-    private byte[] _pack(Object data) throws IOException {
+    private byte[] packRecursive(Object data) throws IOException {
         // empty
         if (data == null) {
             container.writeByte(QP_BOOL_NULL);
@@ -209,12 +210,12 @@ public class QPack {
             if (l < 6) {
                 container.writeByte(START_ARR + l);
                 for (int i = 0; i < l; i++) {
-                    _pack(Array.get(data, i));
+                    packRecursive(Array.get(data, i));
                 }
             } else {
                 container.writeByte(QP_OPEN_ARRAY);
                 for (int i = 0; i < l; i++) {
-                    _pack(Array.get(data, i));
+                    packRecursive(Array.get(data, i));
                 }
                 container.writeByte(QP_CLOSE_ARRAY);
             }
@@ -227,12 +228,12 @@ public class QPack {
             if (l < 6) {
                 container.writeByte(START_ARR + l);
                 for (Object o : ((Collection<?>) data)) {
-                    _pack(o);
+                    packRecursive(o);
                 }
             } else {
                 container.writeByte(QP_OPEN_ARRAY);
                 for (Object o : ((Collection<?>) data)) {
-                    _pack(o);
+                    packRecursive(o);
                 }
                 container.writeByte(QP_CLOSE_ARRAY);
             }
@@ -245,14 +246,14 @@ public class QPack {
             if (l < 6) {
                 container.writeByte(START_MAP + l);
                 for (Map.Entry<?, ?> o : ((Map<?, ?>) data).entrySet()) {
-                    _pack(o.getKey());
-                    _pack(o.getValue());
+                    packRecursive(o.getKey());
+                    packRecursive(o.getValue());
                 }
             } else {
                 container.writeByte(QP_OPEN_MAP);
                 for (Map.Entry<?, ?> o : ((Map<?, ?>) data).entrySet()) {
-                    _pack(o.getKey());
-                    _pack(o.getValue());
+                    packRecursive(o.getKey());
+                    packRecursive(o.getValue());
                 }
                 container.writeByte(QP_CLOSE_MAP);
             }
@@ -267,7 +268,7 @@ public class QPack {
      * @param data
      * @return
      */
-    private Object _unpack(byte[] data, int pos, int end, String decode) {
+    private Object unpackRecursive(byte[] data, int pos, int end, String decoder) {
         int tp = (data[position] & 0xff);
         position = ++pos;
         // fixed integer
@@ -291,7 +292,15 @@ public class QPack {
             int endPos = position + (tp - 128);
             int p = position;
             position = endPos;
-            return new String(Arrays.copyOfRange(data, p, endPos));
+            if (decoder == null) {
+                return Arrays.copyOfRange(data, p, endPos);
+            } else {
+                try {
+                    return new String(Arrays.copyOfRange(data, p, endPos), decoder);
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(QPack.class.getName()).log(Level.SEVERE, "The Character Encoding " + decoder + " is not supported", ex);
+                }
+            }
         }
         // string
         if (tp < 0xe8) {
@@ -299,7 +308,15 @@ public class QPack {
             int endPos = position + qpType + data.length;
             int p = position + qpType;
             position = endPos;
-            return new String(Arrays.copyOfRange(data, p, data.length));
+            if (decoder == null) {
+                return Arrays.copyOfRange(data, p, data.length);
+            } else {
+                try {
+                    return new String(Arrays.copyOfRange(data, p, data.length), decoder);
+                } catch (UnsupportedEncodingException ex) {
+                    Logger.getLogger(QPack.class.getName()).log(Level.SEVERE, "The Character Encoding " + decoder + " is not supported", ex);
+                }
+            }
         }
         // integer (double included)
         if (tp < 0xed) {
@@ -314,13 +331,22 @@ public class QPack {
         }
         // fixed array
         if (tp < 0xf3) {
-            List list = new ArrayList();
+            Object[] array = new Object[tp - 0xed];
             for (int i = 0; i < (tp - 0xed); i++) {
-                System.out.println("begin: " + position + ", " + end);
-                Object value = _unpack(data, position, end, "utf-8");
-                list.add(value);
+                Object value = unpackRecursive(data, position, end, decoder);
+                array[i] = value;
             }
-            return list;
+            return array;
+        }
+        // fixed map
+        if (tp < 0xf9) {
+            Map map = new HashMap<>();
+            for (int i = 0; i < (tp - 0xf3); i++) {
+                Object key = unpackRecursive(data, position, end, decoder);
+                Object value = unpackRecursive(data, position, end, decoder);
+                map.put(key, value);
+            }
+            return map;
         }
         // boolean
         if (tp < 0xfc) {
@@ -330,11 +356,22 @@ public class QPack {
         if (tp == (QP_OPEN_ARRAY & 0xff)) {
             List list = new ArrayList();
             while (position < end && data[position] != QP_CLOSE_ARRAY) {
-                Object value = _unpack(data, position, end, "utf-8");
+                Object value = unpackRecursive(data, position, end, decoder);
                 list.add(value);
             }
             position++;
-            return list;
+            return list.toArray();
+        }
+        // open map
+        if (tp == (QP_OPEN_MAP & 0xff)) {
+            Map map = new HashMap<>();
+            while (position < end && data[position] != QP_CLOSE_MAP) {
+                Object key = unpackRecursive(data, position, end, decoder);
+                Object value = unpackRecursive(data, position, end, decoder);
+                map.put(key, value);
+            }
+            position++;
+            return map;
         }
 
         throw new IllegalArgumentException("Error in qpack at position " + position);
@@ -348,9 +385,15 @@ public class QPack {
      * @return
      */
     public byte[] pack(Object data) {
+        try {
+            container.close();
+        } catch (IOException ex) {
+            Logger.getLogger(QPack.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        bytesContainer.reset();
         byte[] output = null;
         try {
-            output = _pack(data);
+            output = packRecursive(data);
         } catch (IOException ex) {
             Logger.getLogger(QPack.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -364,7 +407,18 @@ public class QPack {
      */
     public Object unpack(byte[] data) {
         position = 0;
-        return _unpack(data, 0, data.length, "utf8");
+        return unpackRecursive(data, 0, data.length, null);
+    }
+
+    /**
+     *
+     * @param data
+     * @param decoder
+     * @return
+     */
+    public Object unpack(byte[] data, String decoder) {
+        position = 0;
+        return unpackRecursive(data, 0, data.length, decoder);
     }
 
 }
