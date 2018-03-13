@@ -108,7 +108,7 @@ public class QPack {
 
         // numbers
         if (data instanceof Number) {
-
+            
             // double
             if (data instanceof Double) {
                 if ((double) data == 0.0) {
@@ -127,10 +127,14 @@ public class QPack {
             // int
             long length = 0;
 
-            if (data instanceof Integer) {
-                length = (long) (int) data;
-            } else if (data instanceof Long) {
+            if (data instanceof Long) {
                 length = (long) data;
+            } else if (data instanceof Integer) {
+                length = (int) data;
+            } else if (data instanceof Short) {
+                length = (short) data;
+            }  else if (data instanceof Byte) {
+                length = (byte) data;
             }
 
             if (length < 64 && length >= 0) {

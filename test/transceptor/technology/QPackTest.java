@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Stack;
-import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static transceptor.technology.Types.*;
@@ -137,11 +136,10 @@ public class QPackTest {
 
     @Test
     public void testUnpackByteArray() {
-
         Map<byte[], byte[]> m = new HashMap<>();
         m.put(new byte[]{104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100}, new byte[]{(byte) 139, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100});
         m.put(new byte[]{0x13, 0x00, 0x00, 0x00, 0x08, 0x00}, new byte[]{(byte) 134, 19, 0, 0, 0, 8, 0});
-        
+
         QPack qpack = new QPack();
 
         m.entrySet().forEach((entry) -> {
@@ -149,8 +147,7 @@ public class QPackTest {
             System.out.println("Input:  " + Arrays.toString(entry.getKey()));
             System.out.println("Output: " + Arrays.toString(result));
             System.out.println(SEPERATOR);
-            Assert.assertArrayEquals(entry.getKey(), result);
+            assertArrayEquals(entry.getKey(), result);
         });
-
     }
 }
