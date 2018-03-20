@@ -76,6 +76,12 @@ public class QPackTest {
         Map<Integer, Integer> map2 = new HashMap<>();
         map2.put(2, 7);
         map2.put(5, 9);
+        Map<Object, Object> map3 = new HashMap();
+        map3.put("kaas", new int[]{1, 2, 3, 4, 5});
+        Map<Object, Object> map4 = new HashMap();
+        map4.put("test", 12);
+        map4.put("no", 784);
+        map3.put("map2", map4);
         Queue q = new LinkedList();
         q.add(4);
         q.add(6);
@@ -89,6 +95,7 @@ public class QPackTest {
         map.put(map2, new byte[]{(byte) 245, 2, 7, 5, 9});
         map.put(q, new byte[]{(byte) 239, 4, 6});
         map.put(s, new byte[]{(byte) 240, 1, 6, 4});
+        //map.put(map4, new byte[]{(byte)245, (byte)132, 109, 97, 112, 50, (byte)245, (byte)132, 116, 101, 115, 116, 12, (byte)130, 110, 111, (byte)233, 16, 3, (byte)132, 107, 97, 97, 115, (byte)242, 1, 2, 3, 4, 5});
     }
 
     @Test
@@ -134,7 +141,7 @@ public class QPackTest {
         });
     }
 
-    @Test
+ @Test
     public void testUnpackByteArray() {
         Map<byte[], byte[]> m = new HashMap<>();
         m.put(new byte[]{104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100}, new byte[]{(byte) 139, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100});

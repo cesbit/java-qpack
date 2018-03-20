@@ -54,7 +54,7 @@ public class QPack {
      * @param b
      * @return
      */
-    public Number convertByteToInt(byte[] b) {
+    private Number convertByteToInt(byte[] b) {
         ByteBuffer wrapped = ByteBuffer.wrap(b);
         wrapped.order(ByteOrder.LITTLE_ENDIAN);
         switch (b.length) {
@@ -76,7 +76,7 @@ public class QPack {
      * @param b
      * @return
      */
-    public double convertByteToDouble(byte[] b) {
+    private double convertByteToDouble(byte[] b) {
         ByteBuffer wrapped = ByteBuffer.wrap(b);
         wrapped.order(ByteOrder.LITTLE_ENDIAN);
         return wrapped.getDouble();
