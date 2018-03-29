@@ -34,52 +34,45 @@ public class QPack {
     }
 
     /**
-     * Reverses an array of bytes
+     * Converts a number into array of bytes
      *
-     * @param a containing a byte[] to reverse
-     * @return reversed byte[]
+     * @param number
+     * @param size
+     * @return
      */
-    private byte[] reverseArray(byte[] a) {
-        for (int i = 0; i < a.length / 2; i++) {
-            int temp = a[i];
-            a[i] = a[a.length - i - 1];
-            a[a.length - i - 1] = (byte) temp;
+    public byte[] toBytes(long number, int size) {
+        byte[] result = new byte[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = (byte) (number >> (i * 8));
         }
-        return a;
+        return result;
     }
 
     /**
-     * Converts byte[] to an integer value
-     *
-     * @param b
-     * @return
+     * Converts array of bytes to number
+     * 
+     * @param b byte array
+     * @param tp double or integer
+     * @return 
      */
-    private Number convertByteToInt(byte[] b) {
+    private Number convertByteToNumber(byte[] b, int tp) {
         ByteBuffer wrapped = ByteBuffer.wrap(b);
         wrapped.order(ByteOrder.LITTLE_ENDIAN);
-        switch (b.length) {
-            case 1:
-                return (int) wrapped.get(0);
-            case 2:
-                return (int) wrapped.getShort();
-            case 4:
-                return wrapped.getInt();
-            case 8:
-                return wrapped.getLong();
+        if (tp == (QP_DOUBLE & 0xff)) {
+            return wrapped.getDouble();
+        } else {
+            switch (b.length) {
+                case 1:
+                    return (int) wrapped.get(0);
+                case 2:
+                    return (int) wrapped.getShort();
+                case 4:
+                    return wrapped.getInt();
+                case 8:
+                    return wrapped.getLong();
+            }
+            return 0;
         }
-        return 0;
-    }
-
-    /**
-     * Converts byte[] to a double value
-     *
-     * @param b
-     * @return
-     */
-    private double convertByteToDouble(byte[] b) {
-        ByteBuffer wrapped = ByteBuffer.wrap(b);
-        wrapped.order(ByteOrder.LITTLE_ENDIAN);
-        return wrapped.getDouble();
     }
 
     /**
@@ -108,7 +101,7 @@ public class QPack {
 
         // numbers
         if (data instanceof Number) {
-            
+
             // double
             if (data instanceof Double) {
                 if ((double) data == 0.0) {
@@ -118,10 +111,13 @@ public class QPack {
                 } else if ((double) data == -1.0) {
                     container.write(QP_DOUBLE_N1);
                 } else {
-                    container.writeDouble((double) data);
+                    ByteBuffer b = ByteBuffer.allocate(8);
+                    b.order(ByteOrder.LITTLE_ENDIAN);
+                    b.putDouble((double) data);
                     container.write(QP_DOUBLE);
+                    container.write(b.array());
                 }
-                return reverseArray(bytesContainer.toByteArray());
+                return bytesContainer.toByteArray();
             }
 
             // int
@@ -133,7 +129,7 @@ public class QPack {
                 length = (int) data;
             } else if (data instanceof Short) {
                 length = (short) data;
-            }  else if (data instanceof Byte) {
+            } else if (data instanceof Byte) {
                 length = (byte) data;
             }
 
@@ -148,21 +144,21 @@ public class QPack {
             }
 
             if (length <= Byte.MAX_VALUE && length >= Byte.MIN_VALUE) {
-                container.writeByte((byte) length);
                 container.writeByte(QP_INT8);
+                container.write(toBytes(length, 1));
             } else if (length <= Short.MAX_VALUE && length >= Short.MIN_VALUE) {
-                container.writeShort((short) length);
                 container.writeByte(QP_INT16);
+                container.write(toBytes(length, 2));
             } else if (length <= Integer.MAX_VALUE && length >= Integer.MIN_VALUE) {
-                container.writeInt((int) length);
                 container.writeByte(QP_INT32);
+                container.write(toBytes(length, 4));
             } else if (length <= Long.MAX_VALUE && length >= Long.MIN_VALUE) {
-                container.writeLong((long) length);
                 container.writeByte(QP_INT64);
+                container.write(toBytes(length, 8));
             } else {
                 throw new IllegalArgumentException("qpack allows up to 64bit signed integers, got bit length: " + length);
             }
-            return reverseArray(bytesContainer.toByteArray());
+            return bytesContainer.toByteArray();
         }
 
         // string & byte[]
@@ -327,11 +323,7 @@ public class QPack {
             int qpType = NUMBER_MAP.get(tp);
             int p = position;
             position += qpType;
-            if (tp == (QP_DOUBLE & 0xff)) {
-                return convertByteToDouble(Arrays.copyOfRange(data, p, p + qpType));
-            } else {
-                return convertByteToInt(Arrays.copyOfRange(data, p, p + qpType));
-            }
+            return convertByteToNumber(Arrays.copyOfRange(data, p, p + qpType), tp);
         }
         // fixed array
         if (tp < 0xf3) {
