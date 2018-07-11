@@ -40,7 +40,7 @@ public class QPack {
      * @param size
      * @return
      */
-    public byte[] toBytes(long number, int size) {
+    private byte[] toBytes(long number, int size) {
         byte[] result = new byte[size];
         for (int i = 0; i < size; i++) {
             result[i] = (byte) (number >> (i * 8));
