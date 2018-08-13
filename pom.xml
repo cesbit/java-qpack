@@ -7,15 +7,21 @@
   <groupId>transceptor.technology</groupId>
   <artifactId>java-qpack</artifactId>
   <version>0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
 
   <name>java-qpack</name>
-  <description>A simple java-qpack.</description>
+  <description>Java QPack library: QPack is a fast and efficient serialization format like MessagePack.</description>
   <url>https://github.com/transceptor-technology/java-qpack</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+    </license>
+  </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <dependencies>
