@@ -1,4 +1,4 @@
-package technology.transceptor;
+package technology.transceptor.qpack;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static technology.transceptor.Types.*;
+import static technology.transceptor.qpack.Types.*;
 
 /**
  *

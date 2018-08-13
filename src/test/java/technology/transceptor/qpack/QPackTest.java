@@ -1,4 +1,4 @@
-package technology.transceptor;
+package technology.transceptor.qpack;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.Queue;
 import java.util.Stack;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import static technology.transceptor.Types.*;
+import static technology.transceptor.qpack.Types.*;
 
 /**
  *
