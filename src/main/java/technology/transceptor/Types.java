@@ -1,4 +1,4 @@
-package transceptor.technology;
+package technology.transceptor;
 
 import java.util.Collections;
 import java.util.HashMap;
