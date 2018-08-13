@@ -1,4 +1,4 @@
-package transceptor.technology;
+package technology.transceptor.qpack;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static transceptor.technology.Types.*;
+import static technology.transceptor.qpack.Types.*;
 
 /**
  *
@@ -50,10 +50,10 @@ public class QPack {
 
     /**
      * Converts array of bytes to number
-     * 
+     *
      * @param b byte array
      * @param tp double or integer
-     * @return 
+     * @return
      */
     private Number convertByteToNumber(byte[] b, int tp) {
         ByteBuffer wrapped = ByteBuffer.wrap(b);

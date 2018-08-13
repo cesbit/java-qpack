@@ -5,7 +5,14 @@ QPack is a fast and efficient serialization format like MessagePack. One key dif
 
 ## Installation
 
-You can download the latest version [here](https://github.com/transceptor-technology/java-qpack/releases/latest). But you can also clone this repository and open the project in your favorite Java IDE. After building the project, grab the ```java-qpack.jar``` file and add it to your own project as library.
+You can download the latest version [here](https://github.com/transceptor-technology/java-qpack/releases/latest).
+But you can also clone this repository and build the project using maven (mvn >= 3.3 and java 8 are recommended):
+
+```bash
+mvn clean install
+```
+
+After building the project, grab the `target/java-qpack-0.0-SNAPSHOT.jar` file and add it to your own project as library.
 
 ## Pack
 ----
