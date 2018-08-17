@@ -9,7 +9,7 @@ You can download the latest version [here](https://github.com/transceptor-techno
 But you can also clone this repository and build the project using maven (mvn >= 3.3 and java 8 are recommended):
 
 ```bash
-mvn clean install
+mvn clean install -Dgpg.skip
 ```
 
 After building the project, grab the `target/java-qpack-0.0-SNAPSHOT.jar` file and add it to your own project as library.
